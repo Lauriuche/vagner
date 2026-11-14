@@ -1,0 +1,781 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calculadora de Lucratividade & Investimento</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+        body { font-family: 'Plus Jakarta Sans', sans-serif; }
+        
+        .card-shadow { 
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.05); 
+        }
+        .input-calc { 
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); 
+        }
+        .input-calc:focus { 
+            transform: translateY(-1px); 
+        }
+        .result-card {
+            transition: all 0.3s ease;
+        }
+        .result-card:hover {
+            transform: translateY(-2px);
+        }
+        .positive { color: #10b981; }
+        .negative { color: #ef4444; }
+        .neutral { color: #64748b; }
+    </style>
+</head>
+<body class="bg-[#F8FAFC] text-slate-900 min-h-screen">
+
+    <div class="max-w-7xl mx-auto p-4 md:p-8">
+        <!-- HEADER -->
+        <header class="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
+            <div>
+                <h1 class="text-3xl font-800 tracking-tight flex items-center gap-2">
+                    <span class="bg-emerald-600 text-white p-2 rounded-2xl">
+                        <i data-lucide="trending-up" class="w-6 h-6"></i>
+                    </span>
+                    Lucratividade<span class="text-emerald-600">Pro</span>
+                    <span class="text-xs bg-indigo-100 text-indigo-700 px-2 py-1 rounded-full font-medium ml-2">ANÁLISE</span>
+                </h1>
+                <p class="text-slate-400 text-sm font-medium mt-1">Consórcio + Investimento × Comparativos</p>
+            </div>
+            <div class="flex gap-3">
+                <button onclick="exportPDF()" class="text-xs font-bold bg-white border border-slate-200 px-5 py-2.5 rounded-2xl hover:bg-slate-50 transition-all flex items-center gap-2">
+                    <i data-lucide="download" class="w-4 h-4"></i> EXPORTAR
+                </button>
+                <button onclick="copySummary()" class="text-xs font-bold bg-emerald-600 text-white px-5 py-2.5 rounded-2xl hover:bg-emerald-700 transition-all flex items-center gap-2">
+                    <i data-lucide="copy" class="w-4 h-4"></i> COPIAR RESUMO
+                </button>
+            </div>
+        </header>
+
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+            
+            <!-- ==================== SIDEBAR CONFIG ==================== -->
+            <aside class="lg:col-span-4 space-y-6">
+                
+                <!-- CAPITAL & CARRO -->
+                <div class="bg-white p-6 rounded-[2rem] card-shadow border border-slate-100">
+                    <h2 class="text-[10px] font-800 text-slate-400 uppercase tracking-widest mb-6 flex items-center gap-2">
+                        <i data-lucide="wallet" class="w-3.5 h-3.5"></i> Capital & Objetivo
+                    </h2>
+                    <div class="space-y-5">
+                        <div>
+                            <label class="block text-[11px] font-bold text-slate-500 mb-1.5 ml-1">Capital Disponível</label>
+                            <div class="relative">
+                                <span class="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 font-bold">R$</span>
+                                <input type="text" id="capitalDisponivel" value="120.000,00" class="currency-input input-calc w-full pl-11 pr-4 py-3 bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-emerald-500 font-bold text-lg">
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-[11px] font-bold text-slate-500 mb-1.5 ml-1">Valor do Carro</label>
+                            <div class="relative">
+                                <span class="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 font-bold">R$</span>
+                                <input type="text" id="valorCarro" value="120.000,00" class="currency-input input-calc w-full pl-11 pr-4 py-3 bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-emerald-500 font-bold text-lg">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- CONSÓRCIO -->
+                <div class="bg-white p-6 rounded-[2rem] card-shadow border border-slate-100">
+                    <h2 class="text-[10px] font-800 text-slate-400 uppercase tracking-widest mb-6 flex items-center gap-2">
+                        <i data-lucide="users" class="w-3.5 h-3.5"></i> Estratégia Consórcio
+                    </h2>
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-[11px] font-bold text-slate-500 mb-1.5 ml-1">Valor do Crédito</label>
+                            <div class="relative">
+                                <span class="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 font-bold">R$</span>
+                                <input type="text" id="valorCredito" value="120.000,00" class="currency-input input-calc w-full pl-11 pr-4 py-3 bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-indigo-500 font-bold">
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-3">
+                            <div>
+                                <label class="block text-[11px] font-bold text-slate-500 mb-1.5 ml-1">Prazo (meses)</label>
+                                <input type="number" id="prazoConsorcio" value="60" class="input-calc w-full p-3 bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-indigo-500 font-bold text-center">
+                            </div>
+                            <div>
+                                <label class="block text-[11px] font-bold text-slate-500 mb-1.5 ml-1">Taxa Adm (%)</label>
+                                <input type="number" id="taxaAdm" value="15" step="0.1" class="input-calc w-full p-3 bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-indigo-500 font-bold text-center">
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-3">
+                            <div>
+                                <label class="block text-[11px] font-bold text-slate-500 mb-1.5 ml-1">Mês do Lance</label>
+                                <input type="number" id="mesLance" value="6" min="1" class="input-calc w-full p-3 bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-indigo-500 font-bold text-center">
+                            </div>
+                            <div>
+                                <label class="block text-[11px] font-bold text-slate-500 mb-1.5 ml-1">Lance Próprio</label>
+                                <div class="relative">
+                                    <span class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 font-bold text-sm">R$</span>
+                                    <input type="text" id="lanceProprio" value="60.000,00" class="currency-input input-calc w-full pl-9 pr-3 py-3 bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-indigo-500 font-bold">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-[11px] font-bold text-slate-500 mb-1.5 ml-1">Lance Embutido (%)</label>
+                            <select id="lanceEmbutido" class="input-calc w-full p-3 bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-indigo-500 font-bold">
+                                <option value="0" selected>Sem embutido</option>
+                                <option value="10">10%</option>
+                                <option value="20">20%</option>
+                                <option value="30">30%</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- INVESTIMENTO DO SOBRA -->
+                <div class="bg-white p-6 rounded-[2rem] card-shadow border border-slate-100">
+                    <h2 class="text-[10px] font-800 text-slate-400 uppercase tracking-widest mb-6 flex items-center gap-2">
+                        <i data-lucide="piggy-bank" class="w-3.5 h-3.5"></i> Investimento do Sobra (após Lance)
+                    </h2>
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-[11px] font-bold text-slate-500 mb-1.5 ml-1">Valor Investido Inicial</label>
+                            <div class="relative">
+                                <span class="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 font-bold">R$</span>
+                                <input type="text" id="valorInvestidoSobra" value="60.000,00" class="currency-input input-calc w-full pl-11 pr-4 py-3 bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-emerald-500 font-bold">
+                            </div>
+                            <p class="text-[10px] text-slate-400 mt-1.5 ml-1">Capital disponível − Lance próprio</p>
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-3">
+                            <div>
+                                <label class="block text-[11px] font-bold text-slate-500 mb-1.5 ml-1">Taxa a.a. (%)</label>
+                                <input type="number" id="taxaInvestimento" value="12.5" step="0.1" class="input-calc w-full p-3 bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-emerald-500 font-bold text-center">
+                            </div>
+                            <div>
+                                <label class="block text-[11px] font-bold text-slate-500 mb-1.5 ml-1">Tipo</label>
+                                <select id="tipoInvestimento" class="input-calc w-full p-3 bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-emerald-500 font-bold text-sm">
+                                    <option value="cdb">CDB (IR regressivo)</option>
+                                    <option value="lci">LCI/LCA (isento)</option>
+                                    <option value="tesouro">Tesouro Direto</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 2º INVESTIMENTO SEPARADO -->
+                <div class="bg-white p-6 rounded-[2rem] card-shadow border border-slate-100 border-l-4 border-l-amber-400">
+                    <h2 class="text-[10px] font-800 text-slate-400 uppercase tracking-widest mb-6 flex items-center gap-2">
+                        <i data-lucide="layers" class="w-3.5 h-3.5"></i> 2º Investimento (Separado)
+                    </h2>
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-[11px] font-bold text-slate-500 mb-1.5 ml-1">Valor do 2º Investimento</label>
+                            <div class="relative">
+                                <span class="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 font-bold">R$</span>
+                                <input type="text" id="valorInvest2" value="0,00" class="currency-input input-calc w-full pl-11 pr-4 py-3 bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-amber-500 font-bold">
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-2 gap-3">
+                            <div>
+                                <label class="block text-[11px] font-bold text-slate-500 mb-1.5 ml-1">Taxa a.a. (%)</label>
+                                <input type="number" id="taxaInvest2" value="13.5" step="0.1" class="input-calc w-full p-3 bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-amber-500 font-bold text-center">
+                            </div>
+                            <div>
+                                <label class="block text-[11px] font-bold text-slate-500 mb-1.5 ml-1">Prazo (meses)</label>
+                                <input type="number" id="prazoInvest2" value="60" class="input-calc w-full p-3 bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-amber-500 font-bold text-center">
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-[11px] font-bold text-slate-500 mb-1.5 ml-1">Aporte Mensal (opcional)</label>
+                            <div class="relative">
+                                <span class="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 font-bold">R$</span>
+                                <input type="text" id="aporteMensal2" value="0,00" class="currency-input input-calc w-full pl-11 pr-4 py-3 bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-amber-500 font-bold">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- FINANCIAMENTO (comparativo) -->
+                <div class="bg-white p-6 rounded-[2rem] card-shadow border border-slate-100">
+                    <h2 class="text-[10px] font-800 text-slate-400 uppercase tracking-widest mb-6 flex items-center gap-2">
+                        <i data-lucide="banknote" class="w-3.5 h-3.5"></i> Financiamento (Comparativo)
+                    </h2>
+                    <div class="space-y-4">
+                        <div class="grid grid-cols-2 gap-3">
+                            <div>
+                                <label class="block text-[11px] font-bold text-slate-500 mb-1.5 ml-1">Entrada</label>
+                                <div class="relative">
+                                    <span class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 font-bold text-sm">R$</span>
+                                    <input type="text" id="entradaFin" value="60.000,00" class="currency-input input-calc w-full pl-9 pr-3 py-3 bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-rose-500 font-bold">
+                                </div>
+                            </div>
+                            <div>
+                                <label class="block text-[11px] font-bold text-slate-500 mb-1.5 ml-1">Taxa a.a. (%)</label>
+                                <input type="number" id="taxaFin" value="18.5" step="0.1" class="input-calc w-full p-3 bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-rose-500 font-bold text-center">
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-[11px] font-bold text-slate-500 mb-1.5 ml-1">Prazo Financiamento (meses)</label>
+                            <input type="number" id="prazoFin" value="48" class="input-calc w-full p-3 bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-rose-500 font-bold text-center">
+                        </div>
+                    </div>
+                </div>
+
+                <button onclick="calcularTudo()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-4 rounded-2xl shadow-lg shadow-emerald-100 transition-all flex items-center justify-center gap-2 text-lg">
+                    <i data-lucide="calculator" class="w-5 h-5"></i>
+                    Calcular Análise Completa
+                </button>
+            </aside>
+
+            <!-- ==================== DASHBOARD ==================== -->
+            <main class="lg:col-span-8 space-y-6">
+                
+                <!-- RESUMO PRINCIPAL -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
+                    <div class="bg-emerald-600 p-6 rounded-[2rem] text-white shadow-xl shadow-emerald-100 result-card">
+                        <p class="text-emerald-100 text-xs font-bold uppercase tracking-widest">Patrimônio Final (Consórcio+Inv)</p>
+                        <h3 class="text-3xl font-800 mt-2" id="resPatrimonioFinal">R$ 0,00</h3>
+                        <p class="text-emerald-200 text-sm mt-2" id="resPatrimonioDiff">vs Capital inicial</p>
+                    </div>
+                    <div class="bg-indigo-600 p-6 rounded-[2rem] text-white shadow-xl shadow-indigo-100 result-card">
+                        <p class="text-indigo-100 text-xs font-bold uppercase tracking-widest">Valor Investimento Final</p>
+                        <h3 class="text-3xl font-800 mt-2" id="resInvestFinal">R$ 0,00</h3>
+                        <p class="text-indigo-200 text-sm mt-2" id="resRendimentoLiquido">Rendimento líquido</p>
+                    </div>
+                    <div class="bg-amber-500 p-6 rounded-[2rem] text-white shadow-xl shadow-amber-100 result-card">
+                        <p class="text-amber-100 text-xs font-bold uppercase tracking-widest">2º Investimento Final</p>
+                        <h3 class="text-3xl font-800 mt-2" id="resInvest2Final">R$ 0,00</h3>
+                        <p class="text-amber-100 text-sm mt-2" id="resInvest2Lucro">Lucro líquido</p>
+                    </div>
+                </div>
+
+                <!-- COMPARATIVO DE ESTRATÉGIAS -->
+                <div class="bg-white p-6 rounded-[2rem] card-shadow border border-slate-100">
+                    <h3 class="text-sm font-bold text-slate-600 mb-5 flex items-center gap-2">
+                        <i data-lucide="git-compare" class="w-4 h-4 text-emerald-600"></i>
+                        Comparativo de Estratégias (no final do prazo)
+                    </h3>
+                    
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-sm">
+                            <thead>
+                                <tr class="text-left text-[11px] uppercase tracking-wider text-slate-400 border-b border-slate-100">
+                                    <th class="pb-3 font-bold">Estratégia</th>
+                                    <th class="pb-3 font-bold text-right">Carro</th>
+                                    <th class="pb-3 font-bold text-right">Dinheiro</th>
+                                    <th class="pb-3 font-bold text-right">Patrimônio Total</th>
+                                    <th class="pb-3 font-bold text-right">Resultado</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tabelaComparativo" class="divide-y divide-slate-50">
+                                <!-- preenchido via JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- DETALHES DO CONSÓRCIO + INVESTIMENTO -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="bg-white p-6 rounded-[2rem] card-shadow border border-slate-100">
+                        <h3 class="text-sm font-bold text-slate-600 mb-4 flex items-center gap-2">
+                            <i data-lucide="file-text" class="w-4 h-4 text-indigo-600"></i>
+                            Fluxo Consórcio
+                        </h3>
+                        <div class="space-y-3 text-sm">
+                            <div class="flex justify-between">
+                                <span class="text-slate-500">Parcela inicial</span>
+                                <span class="font-bold" id="detParcelaInicial">R$ 0,00</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-slate-500">Parcela após lance</span>
+                                <span class="font-bold text-indigo-600" id="detParcelaPos">R$ 0,00</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-slate-500">Total pago em parcelas</span>
+                                <span class="font-bold" id="detTotalParcelas">R$ 0,00</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-slate-500">Lance próprio</span>
+                                <span class="font-bold text-rose-500" id="detLance">R$ 0,00</span>
+                            </div>
+                            <div class="flex justify-between border-t border-dashed border-slate-200 pt-3">
+                                <span class="text-slate-600 font-medium">Custo total do carro</span>
+                                <span class="font-bold text-slate-800" id="detCustoTotal">R$ 0,00</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-slate-500">Economia vs Financiamento</span>
+                                <span class="font-bold text-emerald-600" id="detEconomiaFin">R$ 0,00</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-white p-6 rounded-[2rem] card-shadow border border-slate-100">
+                        <h3 class="text-sm font-bold text-slate-600 mb-4 flex items-center gap-2">
+                            <i data-lucide="line-chart" class="w-4 h-4 text-emerald-600"></i>
+                            Evolução do Investimento
+                        </h3>
+                        <div class="h-48">
+                            <canvas id="graficoInvestimento"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- RESUMO DETALHADO FINAL -->
+                <div class="bg-white p-6 rounded-[2rem] card-shadow border border-slate-100">
+                    <h3 class="text-sm font-bold text-slate-600 mb-5 flex items-center gap-2">
+                        <i data-lucide="target" class="w-4 h-4 text-emerald-600"></i>
+                        Análise de Lucratividade Final
+                    </h3>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div class="space-y-4">
+                            <div class="bg-emerald-50 rounded-2xl p-5 border border-emerald-100">
+                                <p class="text-xs font-bold text-emerald-700 uppercase tracking-wider mb-3">Cenário Consórcio + Investimento</p>
+                                <div class="space-y-2 text-sm">
+                                    <div class="flex justify-between">
+                                        <span class="text-slate-600">Carro (valor de mercado)</span>
+                                        <span class="font-bold" id="anaCarro">R$ 120.000,00</span>
+                                    </div>
+                                    <div class="flex justify-between">
+                                        <span class="text-slate-600">Investimento líquido final</span>
+                                        <span class="font-bold text-emerald-600" id="anaInvest">R$ 0,00</span>
+                                    </div>
+                                    <div class="flex justify-between">
+                                        <span class="text-slate-600">2º Investimento</span>
+                                        <span class="font-bold text-amber-600" id="anaInvest2">R$ 0,00</span>
+                                    </div>
+                                    <div class="flex justify-between border-t border-emerald-200 pt-2 mt-2">
+                                        <span class="font-bold text-slate-800">Patrimônio Total</span>
+                                        <span class="font-800 text-lg text-emerald-700" id="anaTotal">R$ 0,00</span>
+                                    </div>
+                                    <div class="flex justify-between">
+                                        <span class="text-slate-500 text-xs">vs Capital Inicial (R$ 120k)</span>
+                                        <span class="font-bold text-sm" id="anaDiff">R$ 0,00</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="space-y-4">
+                            <div class="bg-slate-50 rounded-2xl p-5 border border-slate-100">
+                                <p class="text-xs font-bold text-slate-600 uppercase tracking-wider mb-3">Indicadores de Performance</p>
+                                <div class="space-y-3 text-sm">
+                                    <div class="flex justify-between items-center">
+                                        <span class="text-slate-600">ROI do Investimento Sobra</span>
+                                        <span class="font-bold text-emerald-600" id="indROI">0%</span>
+                                    </div>
+                                    <div class="flex justify-between items-center">
+                                        <span class="text-slate-600">Custo efetivo do carro</span>
+                                        <span class="font-bold" id="indCustoEfetivo">R$ 0,00</span>
+                                    </div>
+                                    <div class="flex justify-between items-center">
+                                        <span class="text-slate-600">Taxa efetiva consórcio</span>
+                                        <span class="font-bold" id="indTaxaEfetiva">0%</span>
+                                    </div>
+                                    <div class="flex justify-between items-center">
+                                        <span class="text-slate-600">Meses até contemplação</span>
+                                        <span class="font-bold text-indigo-600" id="indMesContemplacao">6</span>
+                                    </div>
+                                    <div class="flex justify-between items-center pt-2 border-t border-slate-200">
+                                        <span class="text-slate-700 font-medium">Recomendação</span>
+                                        <span class="font-bold text-emerald-600" id="indRecomendacao">Analisando...</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- OBSERVAÇÕES -->
+                <div class="bg-slate-50 rounded-2xl p-5 border border-slate-100 text-sm text-slate-600">
+                    <p class="font-bold text-slate-700 mb-2 flex items-center gap-2">
+                        <i data-lucide="info" class="w-4 h-4"></i> Premissas da análise
+                    </p>
+                    <ul class="list-disc list-inside space-y-1 text-xs">
+                        <li>O valor do carro é considerado constante (sem depreciação) para simplificar a comparação de patrimônio.</li>
+                        <li>As parcelas do consórcio após o lance são abatidas do saldo devedor (redução de parcela).</li>
+                        <li>O investimento do sobra rende mês a mês com capitalização composta e IR regressivo (quando aplicável).</li>
+                        <li>O 2º investimento é independente e soma no patrimônio final.</li>
+                        <li>Financiamento usa sistema PRICE (parcelas fixas).</li>
+                    </ul>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <script>
+        lucide.createIcons();
+
+        // ========== UTILS ==========
+        function formatCurrency(value) {
+            if (isNaN(value) || value === null) return "R$ 0,00";
+            return value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+        }
+
+        function parseCurrency(str) {
+            if (!str) return 0;
+            return parseFloat(str.replace(/\./g, '').replace(',', '.')) || 0;
+        }
+
+        function applyCurrencyMask(input) {
+            input.addEventListener('input', function() {
+                let value = this.value.replace(/\D/g, '');
+                if (value === '') { this.value = ''; return; }
+                const numeric = parseFloat(value) / 100;
+                this.value = numeric.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+            });
+        }
+
+        document.querySelectorAll('.currency-input').forEach(applyCurrencyMask);
+
+        // IR regressivo CDB
+        function getIRRate(meses) {
+            if (meses <= 6) return 0.225;
+            if (meses <= 12) return 0.20;
+            if (meses <= 24) return 0.175;
+            return 0.15;
+        }
+
+        // ========== CÁLCULOS PRINCIPAIS ==========
+        function calcularInvestimento(valorInicial, taxaAA, meses, tipo = 'cdb', aporteMensal = 0) {
+            const taxaMensal = Math.pow(1 + taxaAA / 100, 1/12) - 1;
+            let saldo = valorInicial;
+            const evolucao = [saldo];
+
+            for (let m = 1; m <= meses; m++) {
+                saldo = saldo * (1 + taxaMensal) + aporteMensal;
+                evolucao.push(saldo);
+            }
+
+            const bruto = saldo;
+            let liquido = bruto;
+            let ir = 0;
+
+            if (tipo === 'cdb' || tipo === 'tesouro') {
+                const rendimento = bruto - valorInicial - (aporteMensal * meses);
+                const aliquota = getIRRate(meses);
+                ir = Math.max(0, rendimento * aliquota);
+                liquido = bruto - ir;
+            }
+
+            return {
+                bruto,
+                liquido,
+                ir,
+                rendimentoBruto: bruto - valorInicial - (aporteMensal * meses),
+                rendimentoLiquido: liquido - valorInicial - (aporteMensal * meses),
+                evolucao
+            };
+        }
+
+        function calcularConsorcio() {
+            const valorCredito = parseCurrency(document.getElementById('valorCredito').value);
+            const prazo = parseInt(document.getElementById('prazoConsorcio').value) || 60;
+            const taxaAdm = parseFloat(document.getElementById('taxaAdm').value) || 15;
+            let mesLance = parseInt(document.getElementById('mesLance').value) || 6;
+            const lanceProprio = parseCurrency(document.getElementById('lanceProprio').value);
+            const lanceEmbutidoPct = parseFloat(document.getElementById('lanceEmbutido').value) || 0;
+
+            mesLance = Math.min(Math.max(1, mesLance), prazo);
+
+            const valorTotalConsorcio = valorCredito * (1 + taxaAdm / 100);
+            const parcelaBase = valorTotalConsorcio / prazo;
+            
+            // Antes do lance
+            const parcelasAntes = mesLance - 1;
+            const totalPagoAntes = parcelasAntes * parcelaBase;
+
+            // Lance
+            const valorLanceEmbutido = (valorCredito * lanceEmbutidoPct) / 100;
+            const valorLanceTotal = lanceProprio + valorLanceEmbutido;
+
+            // Após lance → reduz parcela
+            const saldoAntesLance = valorTotalConsorcio - totalPagoAntes;
+            const saldoAposLance = Math.max(0, saldoAntesLance - valorLanceTotal);
+            const mesesApos = prazo - mesLance;
+            const parcelaPos = mesesApos > 0 ? saldoAposLance / mesesApos : 0;
+
+            const totalPagoApos = parcelaPos * mesesApos;
+            const totalParcelas = totalPagoAntes + totalPagoApos;
+            const custoTotal = totalParcelas + lanceProprio; // embutido já está no crédito
+
+            return {
+                valorCredito,
+                prazo,
+                mesLance,
+                parcelaBase,
+                parcelaPos,
+                totalParcelas,
+                lanceProprio,
+                valorLanceTotal,
+                custoTotal,
+                taxaAdm
+            };
+        }
+
+        function calcularFinanciamento() {
+            const valorCarro = parseCurrency(document.getElementById('valorCarro').value);
+            const entrada = parseCurrency(document.getElementById('entradaFin').value);
+            const taxaAA = parseFloat(document.getElementById('taxaFin').value) || 18.5;
+            const prazo = parseInt(document.getElementById('prazoFin').value) || 48;
+
+            const financiado = Math.max(0, valorCarro - entrada);
+            const taxaMensal = Math.pow(1 + taxaAA / 100, 1/12) - 1;
+
+            let parcela = 0;
+            if (taxaMensal > 0 && prazo > 0) {
+                parcela = financiado * (taxaMensal * Math.pow(1 + taxaMensal, prazo)) / (Math.pow(1 + taxaMensal, prazo) - 1);
+            } else {
+                parcela = financiado / prazo;
+            }
+
+            const totalPago = parcela * prazo + entrada;
+            const juros = totalPago - valorCarro;
+
+            return {
+                entrada,
+                parcela,
+                totalPago,
+                juros,
+                prazo,
+                financiado
+            };
+        }
+
+        let chartInstance = null;
+
+        function calcularTudo() {
+            const capital = parseCurrency(document.getElementById('capitalDisponivel').value);
+            const valorCarro = parseCurrency(document.getElementById('valorCarro').value);
+
+            // === CONSÓRCIO ===
+            const cons = calcularConsorcio();
+
+            // === INVESTIMENTO DO SOBRA ===
+            const valorSobra = parseCurrency(document.getElementById('valorInvestidoSobra').value);
+            const taxaInv = parseFloat(document.getElementById('taxaInvestimento').value) || 12.5;
+            const tipoInv = document.getElementById('tipoInvestimento').value;
+            const mesesInvest = cons.prazo; // investe pelo prazo total do consórcio
+
+            const inv = calcularInvestimento(valorSobra, taxaInv, mesesInvest, tipoInv);
+
+            // === 2º INVESTIMENTO ===
+            const valorInv2 = parseCurrency(document.getElementById('valorInvest2').value);
+            const taxaInv2 = parseFloat(document.getElementById('taxaInvest2').value) || 13.5;
+            const prazoInv2 = parseInt(document.getElementById('prazoInvest2').value) || 60;
+            const aporte2 = parseCurrency(document.getElementById('aporteMensal2').value);
+
+            const inv2 = calcularInvestimento(valorInv2, taxaInv2, prazoInv2, 'cdb', aporte2);
+
+            // === FINANCIAMENTO ===
+            const fin = calcularFinanciamento();
+
+            // === PATRIMÔNIOS FINAIS ===
+            // 1. Consórcio + Investimento
+            const patrimonioConsorcio = valorCarro + inv.liquido + inv2.liquido;
+
+            // 2. Compra à vista
+            const sobraVista = Math.max(0, capital - valorCarro);
+            const invVista = calcularInvestimento(sobraVista, taxaInv, mesesInvest, tipoInv);
+            const patrimonioVista = valorCarro + invVista.liquido + inv2.liquido;
+
+            // 3. Financiamento + investe a sobra da entrada
+            const sobraFin = Math.max(0, capital - fin.entrada);
+            const invFin = calcularInvestimento(sobraFin, taxaInv, fin.prazo, tipoInv);
+            const patrimonioFin = valorCarro + invFin.liquido + inv2.liquido;
+
+            // 4. Só investir (sem carro)
+            const invPuro = calcularInvestimento(capital, taxaInv, mesesInvest, tipoInv);
+            const patrimonioPuro = invPuro.liquido + inv2.liquido;
+
+            // === ATUALIZAR UI ===
+            document.getElementById('resPatrimonioFinal').innerText = formatCurrency(patrimonioConsorcio);
+            const diff = patrimonioConsorcio - capital;
+            document.getElementById('resPatrimonioDiff').innerText = (diff >= 0 ? '+' : '') + formatCurrency(diff) + ' vs capital inicial';
+            document.getElementById('resPatrimonioDiff').className = 'text-sm mt-2 ' + (diff >= 0 ? 'text-emerald-200' : 'text-rose-200');
+
+            document.getElementById('resInvestFinal').innerText = formatCurrency(inv.liquido);
+            document.getElementById('resRendimentoLiquido').innerText = '+' + formatCurrency(inv.rendimentoLiquido) + ' líquido';
+
+            document.getElementById('resInvest2Final').innerText = formatCurrency(inv2.liquido);
+            document.getElementById('resInvest2Lucro').innerText = (inv2.rendimentoLiquido >= 0 ? '+' : '') + formatCurrency(inv2.rendimentoLiquido) + ' lucro';
+
+            // Detalhes consórcio
+            document.getElementById('detParcelaInicial').innerText = formatCurrency(cons.parcelaBase);
+            document.getElementById('detParcelaPos').innerText = formatCurrency(cons.parcelaPos);
+            document.getElementById('detTotalParcelas').innerText = formatCurrency(cons.totalParcelas);
+            document.getElementById('detLance').innerText = formatCurrency(cons.lanceProprio);
+            document.getElementById('detCustoTotal').innerText = formatCurrency(cons.custoTotal);
+            document.getElementById('detEconomiaFin').innerText = formatCurrency(Math.max(0, fin.totalPago - cons.custoTotal));
+
+            // Análise
+            document.getElementById('anaCarro').innerText = formatCurrency(valorCarro);
+            document.getElementById('anaInvest').innerText = formatCurrency(inv.liquido);
+            document.getElementById('anaInvest2').innerText = formatCurrency(inv2.liquido);
+            document.getElementById('anaTotal').innerText = formatCurrency(patrimonioConsorcio);
+            
+            const diffAna = patrimonioConsorcio - capital;
+            const elDiff = document.getElementById('anaDiff');
+            elDiff.innerText = (diffAna >= 0 ? '+' : '') + formatCurrency(diffAna);
+            elDiff.className = 'font-bold text-sm ' + (diffAna >= 0 ? 'text-emerald-600' : 'text-rose-500');
+
+            // Indicadores
+            const roi = valorSobra > 0 ? (inv.rendimentoLiquido / valorSobra) * 100 : 0;
+            document.getElementById('indROI').innerText = roi.toFixed(1) + '%';
+            document.getElementById('indCustoEfetivo').innerText = formatCurrency(cons.custoTotal);
+            
+            const taxaEfetiva = valorCarro > 0 ? ((cons.custoTotal - valorCarro) / valorCarro) * 100 : 0;
+            document.getElementById('indTaxaEfetiva').innerText = taxaEfetiva.toFixed(2) + '%';
+            document.getElementById('indMesContemplacao').innerText = cons.mesLance + ' meses';
+
+            // Recomendação
+            let recomendacao = 'Consórcio + Investimento';
+            let melhor = patrimonioConsorcio;
+            if (patrimonioVista > melhor) { melhor = patrimonioVista; recomendacao = 'Compra à Vista'; }
+            if (patrimonioFin > melhor) { melhor = patrimonioFin; recomendacao = 'Financiamento'; }
+            if (patrimonioPuro > melhor + valorCarro * 0.3) {
+                recomendacao = 'Só Investir (sem carro)';
+            }
+            document.getElementById('indRecomendacao').innerText = recomendacao;
+
+            // Tabela comparativo
+            const tbody = document.getElementById('tabelaComparativo');
+            tbody.innerHTML = `
+                <tr class="hover:bg-emerald-50/50">
+                    <td class="py-3 font-medium text-emerald-700">Consórcio + Investimento</td>
+                    <td class="py-3 text-right">${formatCurrency(valorCarro)}</td>
+                    <td class="py-3 text-right">${formatCurrency(inv.liquido + inv2.liquido)}</td>
+                    <td class="py-3 text-right font-bold text-emerald-700">${formatCurrency(patrimonioConsorcio)}</td>
+                    <td class="py-3 text-right ${diffAna >= 0 ? 'text-emerald-600' : 'text-rose-500'} font-medium">${diffAna >= 0 ? '+' : ''}${formatCurrency(diffAna)}</td>
+                </tr>
+                <tr class="hover:bg-slate-50">
+                    <td class="py-3 font-medium">Compra à Vista</td>
+                    <td class="py-3 text-right">${formatCurrency(valorCarro)}</td>
+                    <td class="py-3 text-right">${formatCurrency(invVista.liquido + inv2.liquido)}</td>
+                    <td class="py-3 text-right font-bold">${formatCurrency(patrimonioVista)}</td>
+                    <td class="py-3 text-right ${(patrimonioVista - capital) >= 0 ? 'text-emerald-600' : 'text-rose-500'}">${(patrimonioVista - capital) >= 0 ? '+' : ''}${formatCurrency(patrimonioVista - capital)}</td>
+                </tr>
+                <tr class="hover:bg-slate-50">
+                    <td class="py-3 font-medium">Financiamento</td>
+                    <td class="py-3 text-right">${formatCurrency(valorCarro)}</td>
+                    <td class="py-3 text-right">${formatCurrency(invFin.liquido + inv2.liquido)}</td>
+                    <td class="py-3 text-right font-bold">${formatCurrency(patrimonioFin)}</td>
+                    <td class="py-3 text-right ${(patrimonioFin - capital) >= 0 ? 'text-emerald-600' : 'text-rose-500'}">${(patrimonioFin - capital) >= 0 ? '+' : ''}${formatCurrency(patrimonioFin - capital)}</td>
+                </tr>
+                <tr class="hover:bg-slate-50">
+                    <td class="py-3 font-medium text-slate-500">Só Investir (sem carro)</td>
+                    <td class="py-3 text-right text-slate-400">—</td>
+                    <td class="py-3 text-right">${formatCurrency(patrimonioPuro)}</td>
+                    <td class="py-3 text-right font-bold text-slate-600">${formatCurrency(patrimonioPuro)}</td>
+                    <td class="py-3 text-right ${(patrimonioPuro - capital) >= 0 ? 'text-emerald-600' : 'text-rose-500'}">${(patrimonioPuro - capital) >= 0 ? '+' : ''}${formatCurrency(patrimonioPuro - capital)}</td>
+                </tr>
+            `;
+
+            // Gráfico
+            updateChart(inv.evolucao, mesesInvest);
+        }
+
+        function updateChart(evolucao, meses) {
+            const ctx = document.getElementById('graficoInvestimento');
+            if (chartInstance) chartInstance.destroy();
+
+            const step = Math.max(1, Math.floor(meses / 10));
+            const labels = [];
+            const data = [];
+            for (let i = 0; i <= meses; i += step) {
+                labels.push(i === 0 ? 'Início' : `M${i}`);
+                data.push(evolucao[i] || evolucao[evolucao.length - 1]);
+            }
+            if (labels[labels.length - 1] !== `M${meses}`) {
+                labels.push(`M${meses}`);
+                data.push(evolucao[evolucao.length - 1]);
+            }
+
+            chartInstance = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels,
+                    datasets: [{
+                        label: 'Saldo Investimento (R$)',
+                        data,
+                        borderColor: '#10b981',
+                        backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                        fill: true,
+                        tension: 0.35,
+                        borderWidth: 3,
+                        pointRadius: 3,
+                        pointBackgroundColor: '#10b981'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: false,
+                            ticks: {
+                                callback: v => 'R$ ' + (v / 1000).toFixed(0) + 'k'
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function copySummary() {
+            const capital = document.getElementById('capitalDisponivel').value;
+            const patrimonio = document.getElementById('resPatrimonioFinal').innerText;
+            const invest = document.getElementById('resInvestFinal').innerText;
+            const invest2 = document.getElementById('resInvest2Final').innerText;
+            const recomendacao = document.getElementById('indRecomendacao').innerText;
+
+            const texto = `📊 Análise de Lucratividade — Capital R$ ${capital}
+            
+🚗 Estratégia: Consórcio + Investimento
+• Patrimônio final: ${patrimonio}
+• Investimento do sobra: ${invest}
+• 2º Investimento: ${invest2}
+• Recomendação: ${recomendacao}
+
+Gerado em LucratividadePro`;
+            
+            navigator.clipboard.writeText(texto).then(() => {
+                alert('Resumo copiado!');
+            });
+        }
+
+        function exportPDF() {
+            window.print();
+        }
+
+        // Calcular ao carregar
+        document.addEventListener('DOMContentLoaded', () => {
+            // Auto-atualizar valor investido quando lance muda
+            document.getElementById('lanceProprio').addEventListener('input', () => {
+                const capital = parseCurrency(document.getElementById('capitalDisponivel').value);
+                const lance = parseCurrency(document.getElementById('lanceProprio').value);
+                const sobra = Math.max(0, capital - lance);
+                document.getElementById('valorInvestidoSobra').value = sobra.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+            });
+
+            document.getElementById('capitalDisponivel').addEventListener('input', () => {
+                const capital = parseCurrency(document.getElementById('capitalDisponivel').value);
+                const lance = parseCurrency(document.getElementById('lanceProprio').value);
+                const sobra = Math.max(0, capital - lance);
+                document.getElementById('valorInvestidoSobra').value = sobra.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+            });
+
+            calcularTudo();
+        });
+    </script>
+</body>
+</html>
